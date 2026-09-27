@@ -1,0 +1,19 @@
+# Audio y resultados: reuniones privadas, nunca se versionan
+samples/
+outputs/
+*.wav
+*.mp3
+*.m4a
+*.mp4
+*.ogg
+*.flac
+*.webm
+*.aac
+
+# Secretos
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc

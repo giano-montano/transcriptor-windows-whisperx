@@ -1,0 +1,28 @@
+[project]
+name = "transcriptor"
+version = "0.1.0"
+description = "Transcripción local de reuniones largas con WhisperX (ASR + alineación + diarización)."
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "whisperx==3.8.6",
+    "torch==2.8.0",
+    "torchaudio==2.8.0",
+    "torchvision==0.23.0",
+    "python-dotenv>=1.0",
+]
+
+[tool.uv]
+# Por ahora solo se soporta y verifica Windows.
+environments = ["sys_platform == 'win32'"]
+
+# cu126: última serie de wheels de PyTorch que incluye kernels sm_61 (Pascal).
+# explicit = true -> solo torch/torchaudio/torchvision salen de este índice.
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+torchaudio = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
