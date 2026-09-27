@@ -57,11 +57,14 @@ Debe decir `torch: 2.8.0+cu126`, `GPU sm_XX incluida en la build: True` y `Opera
 uv run python -m transcriptor samples\reunion.mp3
 ```
 
-Por defecto usa large-v3, español, GPU si está disponible e identificación de hablantes. Genera en `outputs\`:
+Por defecto usa large-v3, español, GPU si está disponible e identificación de hablantes, y genera
+`outputs\reunion.txt`: texto legible `SPEAKER_00: ...`, con los turnos consecutivos del mismo hablante fusionados.
 
-- `reunion.txt`: texto legible, `[hh:mm:ss] SPEAKER_00: ...`, con turnos consecutivos del mismo hablante fusionados.
-- `reunion.srt`: subtítulos.
-- `reunion.json`: segmentos, palabras con timestamps y hablante, y metadatos de la corrida (tiempos por etapa).
+Formatos con tiempos, bajo pedido:
+
+- `--timestamps`: agrega `[hh:mm:ss]` al inicio de cada turno del `.txt`.
+- `--formats txt,srt,json`: `.srt` (subtítulos) y `.json` (palabras con tiempo y hablante, más metadatos de la
+  corrida, como los tiempos por etapa).
 
 Ejemplos:
 
@@ -71,7 +74,10 @@ uv run python -m transcriptor samples\reunion.m4a --speakers 3
 uv run python -m transcriptor samples\reunion.m4a --min-speakers 2 --max-speakers 5
 
 # Sin identificar hablantes, solo .txt, en otra carpeta
-uv run python -m transcriptor samples\reunion.mp4 --no-diarize --formats txt --output-dir C:\transcripciones
+uv run python -m transcriptor samples\reunion.mp4 --no-diarize --output-dir C:\transcripciones
+
+# Con tiempos en el .txt, más .srt y .json
+uv run python -m transcriptor samples\reunion.mp3 --timestamps --formats txt,srt,json
 
 # Forzar CPU
 uv run python -m transcriptor samples\reunion.mp3 --device cpu
@@ -87,14 +93,17 @@ Nunca entrega en silencio una transcripción sin hablantes.
 
 ## Tiempos medidos
 
-GTX 1060 6 GB, large-v3, int8, batch 4, audio de 5 min con 2 personas, modelos ya descargados:
+GTX 1060 6 GB, large-v3, int8, batch 4, modelos ya descargados:
 
-| Etapa | Tiempo |
-|---|---|
-| Transcripción | 1 min 02 s |
-| Alineación | 7,6 s |
-| Hablantes | 15,8 s |
-| **Total** | **1 min 26 s** |
+| Etapa | Reunión de 69 min | Audio de 5 min |
+|---|---|---|
+| Carga de audio | 5,6 s | 0,4 s |
+| Transcripción | 8 min 43 s | 1 min 02 s |
+| Alineación | 1 min 19 s | 7,6 s |
+| Hablantes | 3 min 32 s | 15,8 s |
+| **Total** | **13 min 39 s** | **1 min 26 s** |
+
+Pico de VRAM en la reunión de 69 min: 5,6 GB de 6 GB, contando lo que ya usaban el escritorio y los navegadores.
 
 En CPU, un audio de 45 s tardó 1 min 18 s en total.
 

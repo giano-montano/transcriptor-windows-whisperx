@@ -37,6 +37,8 @@ def build_parser() -> argparse.ArgumentParser:
     g = p.add_argument_group("salida")
     g.add_argument("--output-dir", type=Path, help="carpeta de salida")
     g.add_argument("--formats", help=f"lista separada por comas de: {','.join(FORMATS)}")
+    g.add_argument("--timestamps", action=argparse.BooleanOptionalAction, default=None,
+                   help="[hh:mm:ss] al inicio de cada turno del .txt")
     return p
 
 
@@ -105,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         "duration_s": round(result["duration"], 1),
         "timings_s": reporter.timings | {"total": round(total, 1)},
     }
-    paths = write_all(result, settings.output_dir, args.audio.stem, settings.formats, meta)
+    paths = write_all(result, settings.output_dir, args.audio.stem, settings.formats, meta, settings.timestamps)
 
     speakers = sorted({seg["speaker"] for seg in result["segments"] if seg.get("speaker")})
     print(f"\nListo en {fmt_duration(total)} (audio de {fmt_duration(result['duration'])}).", file=sys.stderr)

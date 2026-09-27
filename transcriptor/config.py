@@ -25,7 +25,8 @@ class Settings:
     min_speakers: int | None = None
     max_speakers: int | None = None
     output_dir: Path = Path("outputs")
-    formats: list[str] = field(default_factory=lambda: list(FORMATS))
+    formats: list[str] = field(default_factory=lambda: ["txt"])
+    timestamps: bool = False
 
     def compute_type_for(self, device: str) -> str:
         if self.compute_type:
@@ -56,6 +57,7 @@ def load_settings(path: Path | None = None) -> Settings:
         "max_speakers": dia.get("max_speakers"),
         "output_dir": Path(out["dir"]) if "dir" in out else None,
         "formats": out.get("formats"),
+        "timestamps": out.get("timestamps"),
     }
     settings = Settings(**{k: v for k, v in values.items() if v is not None})
     validate(settings)

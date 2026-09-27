@@ -20,4 +20,5 @@ model = "pyannote/speaker-diarization-community-1"
 
 [output]
 dir = "outputs"
-formats = ["txt", "srt", "json"]
+formats = ["txt"]          # opciones: txt, srt, json (srt y json siempre llevan tiempos)
+timestamps = false            # [hh:mm:ss] al inicio de cada turno en el .txt

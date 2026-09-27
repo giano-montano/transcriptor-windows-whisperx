@@ -35,10 +35,12 @@ def meeting_turns(segments: list[dict]) -> list[tuple[float, str | None, str]]:
     return turns
 
 
-def write_txt(result: dict, path: Path) -> None:
+def write_txt(result: dict, path: Path, timestamps: bool) -> None:
     lines = []
     for start, speaker, text in meeting_turns(result["segments"]):
-        prefix = f"[{hms(start)}] {speaker}: " if speaker else f"[{hms(start)}] "
+        prefix = f"[{hms(start)}] " if timestamps else ""
+        if speaker:
+            prefix += f"{speaker}: "
         lines.append(prefix + text)
     path.write_text("\n\n".join(lines) + "\n", encoding="utf-8")
 
@@ -58,13 +60,15 @@ def write_json(result: dict, path: Path, meta: dict) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=1, default=float), encoding="utf-8")
 
 
-def write_all(result: dict, out_dir: Path, stem: str, formats: list[str], meta: dict) -> list[Path]:
+def write_all(
+    result: dict, out_dir: Path, stem: str, formats: list[str], meta: dict, timestamps: bool
+) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for fmt in formats:
         path = out_dir / f"{stem}.{fmt}"
         if fmt == "txt":
-            write_txt(result, path)
+            write_txt(result, path, timestamps)
         elif fmt == "srt":
             write_srt(result, path)
         elif fmt == "json":
