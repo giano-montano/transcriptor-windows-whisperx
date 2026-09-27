@@ -19,6 +19,6 @@ model = "pyannote/speaker-diarization-community-1"
 # max_speakers = 6
 
 [output]
-dir = "outputs"
-formats = ["txt"]          # opciones: txt, srt, json (srt y json siempre llevan tiempos)
+dir = "outputs"          # cada audio va a outputs/<nombre>/ (se sobrescribe si ya existe)
+formats = ["txt"]        # txt y/o srt; el .json se guarda siempre (base de transcriptor.render)
 timestamps = false            # [hh:mm:ss] al inicio de cada turno en el .txt

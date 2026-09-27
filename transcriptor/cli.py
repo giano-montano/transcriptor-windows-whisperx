@@ -35,8 +35,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--batch-size", type=int)
 
     g = p.add_argument_group("salida")
-    g.add_argument("--output-dir", type=Path, help="carpeta de salida")
-    g.add_argument("--formats", help=f"lista separada por comas de: {','.join(FORMATS)}")
+    g.add_argument("--output-dir", type=Path, help="carpeta base; cada audio va a <output-dir>/<nombre>/")
+    g.add_argument("--formats", help=f"lista separada por comas de: {','.join(FORMATS)} (el .json se guarda siempre)")
     g.add_argument("--timestamps", action=argparse.BooleanOptionalAction, default=None,
                    help="[hh:mm:ss] al inicio de cada turno del .txt")
     return p

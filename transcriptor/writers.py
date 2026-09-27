@@ -63,15 +63,24 @@ def write_json(result: dict, path: Path, meta: dict) -> None:
 def write_all(
     result: dict, out_dir: Path, stem: str, formats: list[str], meta: dict, timestamps: bool
 ) -> list[Path]:
-    out_dir.mkdir(parents=True, exist_ok=True)
+    """Escribe en <out_dir>/<stem>/<stem>.<fmt>. El .json se guarda siempre: es la base de transcriptor.render."""
+    folder = out_dir / stem
+    folder.mkdir(parents=True, exist_ok=True)
+    json_path = folder / f"{stem}.json"
+    write_json(result, json_path, meta)
+    return [*render(result, folder, stem, [f for f in formats if f != "json"], timestamps), json_path]
+
+
+def render(result: dict, folder: Path, stem: str, formats: list[str], timestamps: bool) -> list[Path]:
+    """Escribe las salidas legibles (txt, srt) a partir de los segmentos."""
     written = []
     for fmt in formats:
-        path = out_dir / f"{stem}.{fmt}"
+        path = folder / f"{stem}.{fmt}"
         if fmt == "txt":
             write_txt(result, path, timestamps)
         elif fmt == "srt":
             write_srt(result, path)
-        elif fmt == "json":
-            write_json(result, path, meta)
+        else:
+            raise ValueError(f"Formato no soportado: {fmt}")
         written.append(path)
     return written

@@ -57,14 +57,33 @@ Debe decir `torch: 2.8.0+cu126`, `GPU sm_XX incluida en la build: True` y `Opera
 uv run python -m transcriptor samples\reunion.mp3
 ```
 
-Por defecto usa large-v3, español, GPU si está disponible e identificación de hablantes, y genera
-`outputs\reunion.txt`: texto legible `SPEAKER_00: ...`, con los turnos consecutivos del mismo hablante fusionados.
+Por defecto usa large-v3, español, GPU si está disponible e identificación de hablantes. Cada audio tiene su
+propia carpeta en `outputs\`, que se sobrescribe si ya existe:
 
-Formatos con tiempos, bajo pedido:
+```
+outputs\reunion\
+  reunion.txt    texto legible "SPEAKER_00: ...", con los turnos consecutivos del mismo hablante fusionados
+  reunion.json   palabras con tiempo y hablante, más metadatos de la corrida (se guarda siempre)
+```
+
+Bajo pedido:
 
 - `--timestamps`: agrega `[hh:mm:ss]` al inicio de cada turno del `.txt`.
-- `--formats txt,srt,json`: `.srt` (subtítulos) y `.json` (palabras con tiempo y hablante, más metadatos de la
-  corrida, como los tiempos por etapa).
+- `--formats txt,srt`: agrega un `.srt` (subtítulos).
+
+### Regenerar salidas sin volver a transcribir
+
+Desde el `.json`, en menos de un segundo y sin GPU:
+
+```powershell
+# .txt con tiempos
+uv run python -m transcriptor.render outputs\reunion --timestamps
+
+# .txt sin tiempos, más .srt
+uv run python -m transcriptor.render outputs\reunion --formats txt,srt
+```
+
+Acepta la carpeta o el `.json` y reemplaza los archivos que regenera.
 
 Ejemplos:
 
@@ -76,8 +95,8 @@ uv run python -m transcriptor samples\reunion.m4a --min-speakers 2 --max-speaker
 # Sin identificar hablantes, solo .txt, en otra carpeta
 uv run python -m transcriptor samples\reunion.mp4 --no-diarize --output-dir C:\transcripciones
 
-# Con tiempos en el .txt, más .srt y .json
-uv run python -m transcriptor samples\reunion.mp3 --timestamps --formats txt,srt,json
+# Con tiempos en el .txt, más .srt
+uv run python -m transcriptor samples\reunion.mp3 --timestamps --formats txt,srt
 
 # Forzar CPU
 uv run python -m transcriptor samples\reunion.mp3 --device cpu
