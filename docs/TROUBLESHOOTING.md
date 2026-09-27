@@ -49,6 +49,16 @@ huggingface-hub 0.36.2, torchcodec 0.7.0, ffmpeg 8.1.1 essentials (gyan.dev).
   y aceptar las condiciones (`gated=auto`: el acceso es inmediato). Es un único repo: incluye segmentation,
   embedding y PLDA.
 
+## Diarización: `403 Forbidden: Please enable access to public gated repositories in your fine-grained token settings`
+
+- **Síntoma:** con la licencia ya aceptada, la descarga de `config.yaml` de `pyannote/speaker-diarization-community-1`
+  sigue fallando con 403. El mensaje final que se ve es `LocalEntryNotFoundError: An error happened while trying to
+  locate the file on the Hub...`, que es engañoso: el 403 real aparece más arriba en el traceback.
+- **Causa:** el token es *fine-grained* y no tiene el permiso de leer repos gated
+  (`HfApi().whoami()["auth"]["accessToken"]["fineGrained"]["canReadGatedRepos"] == False`).
+- **Solución:** usar un token de tipo **Read** o, en el token fine-grained, activar
+  *"Read access to contents of all public gated repos you can access"*.
+
 ## CUDA out of memory en ASR con `batch_size=8`
 
 - **Síntoma:** `RuntimeError: CUDA failed with error out of memory` en `generate_segment_batched`
@@ -63,5 +73,5 @@ huggingface-hub 0.36.2, torchcodec 0.7.0, ffmpeg 8.1.1 essentials (gyan.dev).
 - **Causa:** torchcodec 0.7.0 en Windows necesita las DLL *compartidas* de FFmpeg 4–7. La build "essentials"
   de gyan.dev (la que instala winget) es estática y además es la 8.x.
 - **Impacto:** ninguno. whisperx decodifica con el `ffmpeg` CLI y le pasa a pyannote el audio en memoria
-  (`{'waveform', 'sample_rate'}`), que es justamente la vía alternativa que sugiere el aviso. Queda pendiente confirmar
-  que la diarización completa corre sin problemas.
+  (`{'waveform', 'sample_rate'}`), que es justamente la vía alternativa que sugiere el aviso. Verificado: con este aviso,
+  la diarización completa con community-1 funciona.
