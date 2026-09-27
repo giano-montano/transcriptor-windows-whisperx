@@ -74,7 +74,10 @@ def run(audio_path: str, s: Settings, device: str, reporter: Reporter) -> dict:
     print(f"      duración del audio: {fmt_duration(duration)}", file=sys.stderr)
 
     with reporter.stage("asr", f"Transcribiendo ({s.model}, {device}, {compute_type}, batch {s.batch_size})"):
-        model = whisperx.load_model(s.model, device, compute_type=compute_type, language=s.language)
+        asr_options = {"initial_prompt": s.initial_prompt} if s.initial_prompt else None
+        model = whisperx.load_model(
+            s.model, device, compute_type=compute_type, language=s.language, asr_options=asr_options
+        )
         result = model.transcribe(
             audio, batch_size=s.batch_size, language=s.language, progress_callback=reporter.progress
         )

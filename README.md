@@ -110,6 +110,29 @@ Los valores por defecto están en `config.toml`. Cualquier opción del CLI los s
 Si se pidió identificar hablantes y falla, el programa termina con error (código 3) y no genera salidas.
 Nunca entrega en silencio una transcripción sin hablantes.
 
+### Número de hablantes
+
+Por defecto lo estima pyannote. A veces divide a una persona en dos etiquetas (`SPEAKER_02` y `SPEAKER_03`).
+Fijarlo con `--speakers N` puede empeorar el resultado: en una reunión de 69 min con 3 personas, `--speakers 3`
+unió esas dos etiquetas, pero le atribuyó a una persona frases de las otras en toda la reunión, incluso antes de
+que llegara. Un rango (`--min-speakers` / `--max-speakers`) no cambia nada si la estimación ya cae dentro.
+
+### Nombres y siglas: `--prompt` (con riesgo)
+
+Whisper suele escribir mal los nombres propios y las siglas. `--prompt` le da un texto de contexto:
+
+```powershell
+uv run python -m transcriptor samples\reunion.mp3 --prompt "Hablamos de DSC PUCP, la AEE PUCP, IEEE CS PUCP y Don Keynesio."
+```
+
+Úsalo solo cuando los nombres importen más que el riesgo. En la reunión de 69 min de prueba, ese prompt corrigió
+todas las apariciones de "Don Keynesio" y de "DSC", pero:
+
+- perdió el 3,6 % de las palabras: en algunos trozos se saltó frases o reemplazó ~45 palabras por "¡Suscríbete al canal!";
+- insertó siglas que nadie dijo (por ejemplo, "desde ese punto" pasó a "DSC PUCP").
+
+Sin `--prompt` no pasa nada de esto. El prompt usado queda registrado en el `.json`.
+
 ## Tiempos medidos
 
 GTX 1060 6 GB, large-v3, int8, batch 4, modelos ya descargados:

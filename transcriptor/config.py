@@ -15,6 +15,7 @@ class Settings:
     model: str = "large-v3"
     language: str | None = "es"
     batch_size: int = 4
+    initial_prompt: str | None = None  # solo por corrida (--prompt); ver README
     device: str = "auto"
     compute_type_cuda: str = "int8"
     compute_type_cpu: str = "int8"

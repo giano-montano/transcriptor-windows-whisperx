@@ -33,6 +33,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--device", choices=["auto", "cuda", "cpu"])
     g.add_argument("--compute-type", help="int8, float32... (default según dispositivo)")
     g.add_argument("--batch-size", type=int)
+    g.add_argument("--prompt", dest="initial_prompt", metavar="TEXTO",
+                   help="texto de contexto con nombres y siglas (ver README: puede perder o inventar texto)")
 
     g = p.add_argument_group("salida")
     g.add_argument("--output-dir", type=Path, help="carpeta base; cada audio va a <output-dir>/<nombre>/")
@@ -100,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         "device": result["device"],
         "compute_type": result["compute_type"],
         "batch_size": settings.batch_size,
+        "initial_prompt": settings.initial_prompt,
         "diarization": settings.diarization_model if settings.diarize else None,
         "num_speakers": settings.num_speakers,
         "min_speakers": settings.min_speakers,
