@@ -1,0 +1,23 @@
+# Valores por defecto de transcriptor. Cualquier opción del CLI los sobreescribe.
+
+[asr]
+model = "large-v3"
+language = "es"          # "auto" para detectarlo
+batch_size = 4           # 8 desborda una GPU de 6 GB con large-v3 (ver docs/TROUBLESHOOTING.md)
+
+[device]
+device = "auto"          # auto | cuda | cpu
+compute_type_cuda = "int8"   # CTranslate2 no soporta float16 en Pascal (CC 6.1)
+compute_type_cpu = "int8"
+
+[diarization]
+enabled = true
+model = "pyannote/speaker-diarization-community-1"
+# Número de hablantes: exacto (num_speakers) o rango (min/max). Sin definir = lo estima pyannote.
+# num_speakers = 2
+# min_speakers = 2
+# max_speakers = 6
+
+[output]
+dir = "outputs"
+formats = ["txt", "srt", "json"]

@@ -2,7 +2,7 @@
 name = "transcriptor"
 version = "0.1.0"
 description = "Transcripción local de reuniones largas con WhisperX (ASR + alineación + diarización)."
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"  # 3.11+: tomllib; <3.14: whisperx 3.8.6
 dependencies = [
     "whisperx==3.8.6",
     "torch==2.8.0",
