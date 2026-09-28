@@ -7,7 +7,7 @@ Verificado en Windows 10 con una GTX 1060 6 GB y con `--device cpu` (i5-8400). L
 
 ## Requisitos
 
-- Windows 10/11, PowerShell y Git.
+- Windows 10 (Windows 11 *(no verificado)*), PowerShell y Git.
 - Opcional: GPU NVIDIA de la serie GTX 10xx a RTX 40xx, con un driver que soporte CUDA 12.6 o superior
   (`nvidia-smi` lo muestra como "CUDA Version"). Si la GPU no es compatible, el programa avisa y usa la CPU, que
   es mucho más lenta. En una PC **sin** GPU NVIDIA *(no verificado)* debería pasar lo mismo. Solo se probó la CPU
