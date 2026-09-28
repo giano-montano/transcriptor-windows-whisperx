@@ -41,7 +41,7 @@ def setup() -> None:
 
 def check_ffmpeg() -> None:
     if not shutil.which("ffmpeg"):
-        raise SetupError("ffmpeg no está en PATH. Instálalo (winget install Gyan.FFmpeg) y abre una terminal nueva.")
+        raise SetupError("ffmpeg no está en PATH. Instálalo (winget install Gyan.FFmpeg.Essentials) y abre una terminal nueva.")
 
 
 def resolve_device(requested: str) -> tuple[str, str | None]:

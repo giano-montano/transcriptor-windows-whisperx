@@ -4,7 +4,7 @@ Errores reales encontrados durante el desarrollo. Cada entrada incluye síntoma 
 
 Entorno de referencia: Windows 10 22H2 (19045), GTX 1060 6 GB (CC 6.1), driver 566.03, Python 3.11.4,
 whisperx 3.8.6, torch 2.8.0+cu126, ctranslate2 4.8.2, faster-whisper 1.2.1, pyannote-audio 4.0.7,
-huggingface-hub 0.36.2, torchcodec 0.7.0, ffmpeg 8.1.1 essentials (gyan.dev).
+huggingface-hub 0.36.2, torchcodec 0.7.0, ffmpeg 8.1.1 y 9.0.1 essentials (gyan.dev).
 
 ---
 
@@ -75,3 +75,18 @@ huggingface-hub 0.36.2, torchcodec 0.7.0, ffmpeg 8.1.1 essentials (gyan.dev).
 - **Impacto:** ninguno. whisperx decodifica con el `ffmpeg` CLI y le pasa a pyannote el audio en memoria
   (`{'waveform', 'sample_rate'}`), que es justamente la vía alternativa que sugiere el aviso. Verificado: con este aviso,
   la diarización completa con community-1 funciona.
+
+## Crash nativo intermitente en CPU con `CUDA_VISIBLE_DEVICES=-1`
+
+- **Síntoma:** el proceso muere sin traceback durante `[2/4] Transcribiendo (..., cpu, int8, ...)`, con código de
+  salida `-1073741819` (`0xC0000005`, violación de acceso) o `-1073740791` (`0xC0000409`). `faulthandler` no imprime
+  nada y el Visor de eventos no registra el error.
+- **Cuándo pasa:** con la GPU oculta (`CUDA_VISIBLE_DEVICES=-1`), que es como se intentó simular una PC sin GPU.
+  El CLI con large-v3 sobre 5 min falló 2 de 2 veces. Transcribir 60 s con
+  `whisperx.load_model("tiny", "cpu", compute_type="int8")` + `transcribe` falló 5 de 15. Con la GPU visible y
+  `--device cpu`: 0 de 16 (15 con tiny y una corrida de 5 min con large-v3). Por separado, el VAD de pyannote y
+  faster-whisper con la GPU oculta: 0 de 5 cada uno. `OMP_NUM_THREADS=1` no cambia nada (2 de 8).
+- **Causa:** desconocida. Está en código nativo (torch, CTranslate2 o el driver) cuando el driver de CUDA está cargado
+  pero no hay dispositivos visibles. No se sabe si pasa en una PC sin GPU NVIDIA, donde el driver ni siquiera existe.
+- **Solución:** para forzar CPU en una PC con GPU, usar `--device cpu` y no ocultar la GPU con `CUDA_VISIBLE_DEVICES`.
+- **Versiones:** torch 2.8.0+cu126, ctranslate2 4.8.2, faster-whisper 1.2.1, whisperx 3.8.6, driver 566.03.

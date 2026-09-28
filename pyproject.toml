@@ -15,7 +15,8 @@ dependencies = [
 # Por ahora solo se soporta y verifica Windows.
 environments = ["sys_platform == 'win32'"]
 
-# cu126: última serie de wheels de PyTorch que incluye kernels sm_61 (Pascal).
+# cu126: kernels sm_61..sm_90 (GTX 10xx a RTX 40xx) y funciona con drivers CUDA 12.6+.
+# RTX 50xx (sm_120): cambiar a cu128 (ver README, no verificado).
 # explicit = true -> solo torch/torchaudio/torchvision salen de este índice.
 [[tool.uv.index]]
 name = "pytorch-cu126"

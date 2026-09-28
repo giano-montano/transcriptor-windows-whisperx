@@ -31,8 +31,8 @@ def report_system() -> None:
     print(f"SO:        {platform.system()} {platform.release()} (build {platform.version()})")
     print(f"Máquina:   {platform.machine()}")
     print(f"Python:    {sys.version.split()[0]} ({sys.executable})")
-    ok = (3, 10) <= sys.version_info[:2] < (3, 14)
-    print(f"           {'OK' if ok else 'NO SOPORTADO'}: whisperx 3.8.x exige Python >=3.10,<3.14")
+    ok = (3, 11) <= sys.version_info[:2] < (3, 14)
+    print(f"           {'OK' if ok else 'NO SOPORTADO'}: el proyecto exige Python >=3.11,<3.14 (pyproject.toml)")
 
 
 def report_gpu() -> None:

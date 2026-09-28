@@ -3,38 +3,46 @@
 Transcribe grabaciones largas de reuniones 100% en local con [WhisperX](https://github.com/m-bain/whisperX):
 transcripción (Whisper large-v3), timestamps por palabra y separación de hablantes (pyannote).
 
-> Estado: Fase 1. Verificado en Windows 10 + GTX 1060 6 GB. Lo marcado *(no verificado)* aún no se probó.
+Verificado en Windows 10 con una GTX 1060 6 GB y con `--device cpu` (i5-8400). Lo marcado *(no verificado)* no se probó.
 
 ## Requisitos
 
-- Windows 10/11 y PowerShell.
-- Python 3.11–3.13.
-- [uv](https://docs.astral.sh/uv/) *(instalación de uv no verificada en esta guía)*.
-- ffmpeg en `PATH` *(no verificado: `winget install Gyan.FFmpeg`; en la máquina de prueba ya estaba instalado así)*.
-- Opcional: GPU NVIDIA con driver que soporte CUDA 12.6 o superior. Sin GPU funciona en CPU, más lento.
-- Unos 10 GB libres para los modelos, que se descargan la primera vez.
+- Windows 10/11, PowerShell y Git.
+- Opcional: GPU NVIDIA de la serie GTX 10xx a RTX 40xx, con un driver que soporte CUDA 12.6 o superior
+  (`nvidia-smi` lo muestra como "CUDA Version"). Si la GPU no es compatible, el programa avisa y usa la CPU, que
+  es mucho más lenta. En una PC **sin** GPU NVIDIA *(no verificado)* debería pasar lo mismo. Solo se probó la CPU
+  con `--device cpu`, en una PC que sí tiene GPU. Para RTX 50xx ver [más abajo](#gpu-rtx-50xx-no-verificado).
+- Unos 15 GB libres: ~7 GB para el entorno de Python, ~3,5 GB para los modelos (se descargan en la primera
+  transcripción) y la caché de descargas de uv.
 
-Comprueba tu entorno con:
-
-```powershell
-python scripts/diagnose.py
-```
+No hace falta instalar Python: uv descarga Python 3.11 si no lo encuentra.
 
 ## Instalación
 
-```powershell
-git clone <url-del-repo>
-cd transcriptor-windows-whisperx
-uv sync
-```
+1. Instala [uv](https://docs.astral.sh/uv/) y [ffmpeg](https://ffmpeg.org/). Abre una terminal **nueva** después,
+   para que tome el `PATH` actualizado:
 
-Instala torch 2.8.0 **cu126**, la última serie con soporte para GPUs Pascal (GTX 10xx). Comprueba que quedó bien:
+   ```powershell
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   winget install Gyan.FFmpeg.Essentials
+   ```
 
-```powershell
-uv run python scripts/diagnose.py
-```
+2. Descarga el proyecto e instala sus dependencias (descarga ~3 GB):
 
-Debe decir `torch: 2.8.0+cu126`, `GPU sm_XX incluida en la build: True` y `Operación real en GPU: OK`.
+   ```powershell
+   git clone <url-del-repo>
+   cd transcriptor-windows-whisperx
+   uv sync
+   ```
+
+3. Comprueba el entorno:
+
+   ```powershell
+   uv run python scripts/diagnose.py
+   ```
+
+   Con GPU debe decir `torch: 2.8.0+cu126`, `GPU sm_XX incluida en la build: True` y `Operación real en GPU: OK`.
+   Si dice `cuda.is_available(): False`, torch no ve la GPU y el programa usará la CPU.
 
 ## Hugging Face (solo para identificar hablantes)
 
@@ -146,8 +154,27 @@ GTX 1060 6 GB, large-v3, int8, batch 4, modelos ya descargados:
 | **Total** | **13 min 39 s** | **1 min 26 s** |
 
 Pico de VRAM en la reunión de 69 min: 5,6 GB de 6 GB, contando lo que ya usaban el escritorio y los navegadores.
+La misma reunión, desde un clon limpio siguiendo este README (uv 0.12.19, ffmpeg 9.0.1), tardó 14 min 04 s y dio
+un `.txt` idéntico.
 
-En CPU, un audio de 45 s tardó 1 min 18 s en total.
+En CPU (`--device cpu`, en la misma máquina), un audio de 5 min sin identificar hablantes tardó 4 min 27 s, y uno
+de 45 s con hablantes tardó 1 min 18 s.
+
+## GPU RTX 50xx *(no verificado)*
+
+La build de torch que instala `uv sync` (cu126) incluye kernels para `sm_61` a `sm_90` (de GTX 10xx a RTX 40xx).
+Las RTX 50xx (`sm_120`) no están incluidas: el programa debería detectarlo, avisar y usar la CPU.
+
+Para intentar usar la GPU, cambia `cu126` por `cu128` en las dos líneas del índice `pytorch-cu126` de
+`pyproject.toml` (`name` y `url`) y en las tres de `[tool.uv.sources]`, y reinstala:
+
+```powershell
+uv lock
+uv sync
+```
+
+Nadie lo probó todavía. La build cu128 descarga ~3,5 GB y necesita un driver reciente (CUDA 12.8 o superior en
+`nvidia-smi`). Tampoco se sabe si CTranslate2 4.8.2 (el motor de transcripción) funciona en `sm_120`.
 
 ## Problemas conocidos
 
