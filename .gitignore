@@ -13,6 +13,9 @@ outputs/
 # Secretos
 .env
 
+# Notas de traspaso entre sesiones: mencionan reuniones y personas reales
+handoffs/
+
 # Python
 .venv/
 __pycache__/

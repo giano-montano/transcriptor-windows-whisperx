@@ -71,8 +71,18 @@ def write_all(
     return [*render(result, folder, stem, [f for f in formats if f != "json"], timestamps), json_path]
 
 
+def apply_speaker_names(segments: list[dict], names: dict[str, str]) -> list[dict]:
+    """Cambia las etiquetas (SPEAKER_00...) por nombres. Dos etiquetas con el mismo nombre quedan unidas."""
+    if not names:
+        return segments
+    return [seg | {"speaker": names.get(seg["speaker"], seg["speaker"])} if seg.get("speaker") else seg
+            for seg in segments]
+
+
 def render(result: dict, folder: Path, stem: str, formats: list[str], timestamps: bool) -> list[Path]:
-    """Escribe las salidas legibles (txt, srt) a partir de los segmentos."""
+    """Escribe las salidas legibles (txt, srt) a partir de los segmentos, con los nombres de meta.speaker_names."""
+    names = result.get("meta", {}).get("speaker_names", {})
+    result = {"segments": apply_speaker_names(result["segments"], names)}
     written = []
     for fmt in formats:
         path = folder / f"{stem}.{fmt}"

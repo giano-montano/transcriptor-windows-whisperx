@@ -93,6 +93,28 @@ uv run python -m transcriptor.render outputs\reunion --formats txt,srt
 
 Acepta la carpeta o el `.json` y reemplaza los archivos que regenera.
 
+### Poner nombres a los hablantes
+
+También desde el `.json`, sin volver a transcribir. Sin `--names`, muestra las 3 frases más largas de cada
+hablante (con su minuto) y pregunta su nombre. Enter deja el actual y `-` vuelve a la etiqueta original:
+
+```powershell
+uv run python -m transcriptor.rename outputs\reunion
+```
+
+Si ya sabes quién es quién:
+
+```powershell
+uv run python -m transcriptor.rename outputs\reunion --names "SPEAKER_00=Ana,SPEAKER_01=Luis,SPEAKER_02=Luis"
+```
+
+- Dar el mismo nombre a dos etiquetas las une (pyannote a veces divide a una persona en dos), y los turnos
+  seguidos de esa persona se vuelven a fusionar.
+- Se puede cambiar un nombre ya puesto (`--names "Luis=Luis Pérez"`) o quitarlo (`--names "SPEAKER_01="`).
+- Los nombres se guardan en el `.json` (`meta.speaker_names`) sin borrar las etiquetas originales, y
+  `transcriptor.render` los sigue usando. Volver a transcribir el audio los borra.
+- Acepta `--timestamps` y `--formats` igual que `transcriptor.render`.
+
 Ejemplos:
 
 ```powershell
