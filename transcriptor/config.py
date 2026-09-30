@@ -14,10 +14,10 @@ FORMATS = ("txt", "srt", "json")
 class Settings:
     model: str = "large-v3"
     language: str | None = "es"
-    batch_size: int = 4
+    batch_size: int | str = "auto"  # "auto": según VRAM libre (runtime.resolve_batch_size)
     initial_prompt: str | None = None  # solo por corrida (--prompt); ver README
     device: str = "auto"
-    compute_type_cuda: str = "int8"
+    compute_type_cuda: str = "auto"  # "auto": según la GPU (runtime.resolve_compute_type)
     compute_type_cpu: str = "int8"
     compute_type: str | None = None  # si se define, gana sobre compute_type_<device>
     diarize: bool = True
@@ -87,8 +87,10 @@ def validate(s: Settings) -> None:
     unknown = [f for f in s.formats if f not in FORMATS]
     if unknown or not s.formats:
         raise ValueError(f"Formatos no válidos: {unknown or s.formats}. Opciones: {', '.join(FORMATS)}")
-    if s.batch_size < 1:
-        raise ValueError("batch_size debe ser >= 1")
+    if isinstance(s.batch_size, str) and s.batch_size.isdigit():
+        s.batch_size = int(s.batch_size)
+    if s.batch_size != "auto" and (not isinstance(s.batch_size, int) or s.batch_size < 1):
+        raise ValueError(f'batch_size debe ser "auto" o un entero >= 1 (recibido: {s.batch_size!r})')
     if s.num_speakers is not None and (s.min_speakers is not None or s.max_speakers is not None):
         raise ValueError("Usa num_speakers (exacto) o min/max_speakers (rango), no ambos.")
     for name in ("num_speakers", "min_speakers", "max_speakers"):

@@ -31,8 +31,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--language", help='código de idioma (es, en...) o "auto"')
     g.add_argument("--model", help="modelo Whisper (large-v3, medium, ...)")
     g.add_argument("--device", choices=["auto", "cuda", "cpu"])
-    g.add_argument("--compute-type", help="int8, float32... (default según dispositivo)")
-    g.add_argument("--batch-size", type=int)
+    g.add_argument("--compute-type", help='int8, int8_float16, float32... o "auto" (default: según la GPU)')
+    g.add_argument("--batch-size", help='entero o "auto" (default: el mayor que cabe en la VRAM libre)')
     g.add_argument("--prompt", dest="initial_prompt", metavar="TEXTO",
                    help="texto de contexto con nombres y siglas (ver README: puede perder o inventar texto)")
 
@@ -76,7 +76,15 @@ def main(argv: list[str] | None = None) -> int:
         device, warning = runtime.resolve_device(settings.device)
         if warning:
             print(f"AVISO: {warning}", file=sys.stderr)
-        runtime.check_compute_type(device, settings.compute_type_for(device))
+        # Desde acá settings tiene valores concretos: "auto" se resuelve según la máquina.
+        settings.compute_type = runtime.resolve_compute_type(device, settings.compute_type_for(device))
+        settings.batch_size, warning = runtime.resolve_batch_size(device, settings.batch_size)
+        if warning:
+            print(f"AVISO: {warning}", file=sys.stderr)
+        vram_free = runtime.free_vram_mb() if device == "cuda" else None
+        if vram_free is not None:
+            print(f"GPU: {vram_free} MiB libres -> {settings.compute_type}, batch {settings.batch_size}",
+                  file=sys.stderr)
         if settings.diarize:
             import os
 
@@ -101,7 +109,8 @@ def main(argv: list[str] | None = None) -> int:
         "language": result["language"],
         "device": result["device"],
         "compute_type": result["compute_type"],
-        "batch_size": settings.batch_size,
+        "batch_size": result["batch_size"],
+        "vram_free_mb": vram_free,
         "initial_prompt": settings.initial_prompt,
         "diarization": settings.diarization_model if settings.diarize else None,
         "num_speakers": settings.num_speakers,

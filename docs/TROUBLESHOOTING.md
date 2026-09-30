@@ -66,6 +66,28 @@ huggingface-hub 0.36.2, torchcodec 0.7.0, ffmpeg 8.1.1 y 9.0.1 essentials (gyan.
 - **Causa:** con `batch_size=8` el pico total medido llegó a 5960/6144 MiB en una corrida (con ~0.9 GB ocupados
   por el escritorio y los navegadores), y en la siguiente se desbordó.
 - **Solución:** `batch_size=4`: pico total de 5180 MiB (base 325 MiB). El default de la herramienta debe ser ≤ 4 en 6 GB.
+- **Ahora:** `batch_size = "auto"` elige el batch según la VRAM libre (ver la entrada siguiente) y nunca pasa de 4.
+
+## CUDA out of memory con 4 GB (RTX 3050 Laptop): batch automático y reintento
+
+- **Síntoma:** `RuntimeError: CUDA failed with error out of memory` en la ASR con `batch_size=4` (el default fijo anterior),
+  en `int8` y en `int8_float16`. Con `float16` no cabe ni con batch 1.
+- **Causa:** de los 4096 MiB, CUDA deja ~3300 MiB libres (`torch.cuda.mem_get_info()`), aunque el escritorio use la
+  gráfica integrada y `nvidia-smi` muestre 0 MiB en uso. Picos medidos con large-v3 sobre 5 min de audio
+  (`nvidia-smi`, memoria total): batch 1 → 2723 MiB, batch 2 → 3043 MiB (int8) / 3075 MiB (int8_float16),
+  batch 4 → OOM al llegar a ~3600 MiB. Cada elemento del batch suma ~320 MiB.
+- **Solución (aplicada en código):**
+  - `batch_size = "auto"` (`runtime.resolve_batch_size`): antes de cargar el modelo mira la VRAM libre y elige el mayor
+    de 4/2/1 que cumple `2300 + 320 × batch ≤ libre` (MiB, con margen). RTX 3050 4 GB → 2; GTX 1060 6 GB → 4.
+  - Si igual hay OOM en la ASR, se recarga el modelo y se reintenta con la mitad del batch. Hay que **recargar**: tras
+    el OOM, el mismo modelo de CTranslate2 falla con `RuntimeError: parallel_for failed: cudaErrorInvalidDevice:
+    invalid device ordinal`. En 5 min de audio el reintento costó ~12 s.
+  - `compute_type_cuda = "auto"`: `int8_float16` si CTranslate2 lo soporta (RTX; en la 3050 fue ~1 % más rápido que
+    `int8`, mismas 724 palabras), si no `int8` (Pascal).
+  - El `.json` guarda el batch realmente usado (`meta.batch_size`) y la VRAM libre al empezar (`meta.vram_free_mb`).
+- **Limitación:** el `320 MiB por batch` se midió en Ampere. En Pascal el consumo es mayor (batch 4 en la 1060 usó ~4,9 GB),
+  así que con poca VRAM libre la 1060 puede elegir 4 y depender del reintento.
+- **Versiones:** RTX 3050 Laptop 4 GB (CC 8.6), driver 592.27, Windows 11 (26200), torch 2.8.0+cu126, ctranslate2 4.8.2.
 
 ## Aviso (inofensivo): `torchcodec is not installed correctly so built-in audio decoding will fail`
 

@@ -66,15 +66,52 @@ def resolve_device(requested: str) -> tuple[str, str | None]:
     return "cpu", f"GPU no utilizable ({reason}); se usará CPU (mucho más lento)."
 
 
-def check_compute_type(device: str, compute_type: str) -> None:
+def resolve_compute_type(device: str, requested: str) -> str:
+    """Devuelve el compute_type a usar. "auto": int8_float16 si la GPU lo soporta (RTX), si no int8 (Pascal)."""
     import ctranslate2
 
     supported = ctranslate2.get_supported_compute_types(device)
-    if compute_type not in supported:
+    if requested == "auto":
+        return "int8_float16" if device == "cuda" and "int8_float16" in supported else "int8"
+    if requested not in supported:
         raise SetupError(
-            f"compute_type {compute_type!r} no está soportado en {device} por esta máquina. "
+            f"compute_type {requested!r} no está soportado en {device} por esta máquina. "
             f"Opciones: {', '.join(sorted(supported))}."
         )
+    return requested
+
+
+# VRAM que necesita la ASR con large-v3 en int8/int8_float16: base + costo por elemento del batch, con margen.
+# Medido en una RTX 3050 Laptop 4 GB (docs/TROUBLESHOOTING.md): batch 2 cabe con 3,3 GB libres y batch 4 no.
+ASR_BASE_MB, ASR_PER_BATCH_MB = 2300, 320
+BATCH_CHOICES = (4, 2, 1)  # 4 es el máximo verificado en 6 GB; 8 desbordó una GTX 1060
+
+
+def resolve_batch_size(device: str, requested: int | str) -> tuple[int, str | None]:
+    """Devuelve (batch, aviso). "auto" elige el mayor de BATCH_CHOICES que cabe en la VRAM libre ahora mismo."""
+    if requested != "auto":
+        return int(requested), None
+    if device != "cuda":
+        return BATCH_CHOICES[0], None
+    free_mb = free_vram_mb()
+    for batch in BATCH_CHOICES:
+        if ASR_BASE_MB + ASR_PER_BATCH_MB * batch <= free_mb:
+            return batch, None
+    return 1, (
+        f"solo hay {free_mb} MiB libres en la GPU y large-v3 necesita ~{ASR_BASE_MB + ASR_PER_BATCH_MB} MiB. "
+        "Cierra programas que usen la GPU, usa un modelo más chico (--model medium) o --device cpu."
+    )
+
+
+def free_vram_mb() -> int | None:
+    import torch
+
+    return torch.cuda.mem_get_info()[0] // 2**20 if torch.cuda.is_available() else None
+
+
+def is_out_of_memory(exc: BaseException) -> bool:
+    # CTranslate2: "CUDA failed with error out of memory"; torch: torch.cuda.OutOfMemoryError ("CUDA out of memory").
+    return isinstance(exc, RuntimeError) and "out of memory" in str(exc)
 
 
 def check_diarization_access(model: str, token: str | None) -> None:

@@ -3,13 +3,14 @@
 Transcribe grabaciones largas de reuniones 100% en local con [WhisperX](https://github.com/m-bain/whisperX):
 transcripción (Whisper large-v3), timestamps por palabra y separación de hablantes (pyannote).
 
-Verificado en Windows 10 con una GTX 1060 6 GB y con `--device cpu` (i5-8400). Lo marcado *(no verificado)* no se probó.
+Verificado en Windows 10 con una GTX 1060 6 GB y con `--device cpu` (i5-8400), y en Windows 11 con una
+RTX 3050 Laptop 4 GB. Lo marcado *(no verificado)* no se probó.
 
 ## Requisitos
 
-- Windows 10 (Windows 11 *(no verificado)*), PowerShell y Git.
-- Opcional: GPU NVIDIA de la serie GTX 10xx a RTX 40xx, con un driver que soporte CUDA 12.6 o superior
-  (`nvidia-smi` lo muestra como "CUDA Version"). Si la GPU no es compatible, el programa avisa y usa la CPU, que
+- Windows 10 u 11, PowerShell y Git.
+- Opcional: GPU NVIDIA de la serie GTX 10xx a RTX 40xx con al menos 4 GB de VRAM, y un driver que soporte CUDA 12.6
+  o superior (`nvidia-smi` lo muestra como "CUDA Version"). Si la GPU no es compatible, el programa avisa y usa la CPU, que
   es mucho más lenta. En una PC **sin** GPU NVIDIA *(no verificado)* debería pasar lo mismo. Solo se probó la CPU
   con `--device cpu`, en una PC que sí tiene GPU. Para RTX 50xx ver [más abajo](#gpu-rtx-50xx-no-verificado).
 - Unos 15 GB libres: ~7 GB para el entorno de Python, ~3,5 GB para los modelos (se descargan en la primera
@@ -165,22 +166,37 @@ Sin `--prompt` no pasa nada de esto. El prompt usado queda registrado en el `.js
 
 ## Tiempos medidos
 
-GTX 1060 6 GB, large-v3, int8, batch 4, modelos ya descargados:
+large-v3, modelos ya descargados. En ambas GPU, batch y compute_type son los que elige la [configuración automática](#ajuste-a-la-gpu):
 
-| Etapa | Reunión de 69 min | Audio de 5 min |
-|---|---|---|
-| Carga de audio | 5,6 s | 0,4 s |
-| Transcripción | 8 min 43 s | 1 min 02 s |
-| Alineación | 1 min 19 s | 7,6 s |
-| Hablantes | 3 min 32 s | 15,8 s |
-| **Total** | **13 min 39 s** | **1 min 26 s** |
+| Etapa | GTX 1060 6 GB (int8, batch 4), reunión de 69 min | GTX 1060, audio de 5 min | RTX 3050 Laptop 4 GB (int8_float16, batch 2), masterclass de 64 min |
+|---|---|---|---|
+| Carga de audio | 5,6 s | 0,4 s | 3,4 s |
+| Transcripción | 8 min 43 s | 1 min 02 s | 4 min 51 s |
+| Alineación | 1 min 19 s | 7,6 s | 1 min 04 s |
+| Hablantes | 3 min 32 s | 15,8 s | 3 min 08 s |
+| **Total** | **13 min 39 s** | **1 min 26 s** | **9 min 07 s** |
 
 Pico de VRAM en la reunión de 69 min: 5,6 GB de 6 GB, contando lo que ya usaban el escritorio y los navegadores.
+En la RTX 3050 Laptop: 3,1 GB de 4 GB (el escritorio usa la gráfica integrada).
 La misma reunión, desde un clon limpio siguiendo este README (uv 0.12.19, ffmpeg 9.0.1), tardó 14 min 04 s y dio
 un `.txt` idéntico.
 
 En CPU (`--device cpu`, en la misma máquina), un audio de 5 min sin identificar hablantes tardó 4 min 27 s, y uno
 de 45 s con hablantes tardó 1 min 18 s.
+
+## Ajuste a la GPU
+
+Con los valores por defecto (`batch_size = "auto"` y `compute_type_cuda = "auto"` en `config.toml`), el programa se
+adapta a la máquina sin cambiar el comando:
+
+- **compute_type:** `int8_float16` si la GPU lo soporta (RTX), si no `int8` (GTX 10xx).
+- **batch:** el mayor de 4, 2 o 1 que cabe en la VRAM libre al empezar, descontando lo que usan otros programas.
+  Con 6 GB suele ser 4; con 4 GB, 2. Al arrancar se muestra, por ejemplo, `GPU: 3299 MiB libres -> int8_float16, batch 2`.
+- Si igual se queda sin memoria en la transcripción, recarga el modelo y reintenta con la mitad del batch, con un aviso.
+  Solo se repite la transcripción, no la carga del audio.
+
+El `.json` guarda lo que se usó (`meta.batch_size`, `meta.compute_type`, `meta.vram_free_mb`). `--batch-size N` y
+`--compute-type X` fijan un valor y desactivan la elección automática (el reintento con menos batch sigue activo).
 
 ## GPU RTX 50xx *(no verificado)*
 

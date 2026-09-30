@@ -3,11 +3,11 @@
 [asr]
 model = "large-v3"
 language = "es"          # "auto" para detectarlo
-batch_size = 4           # 8 desborda una GPU de 6 GB con large-v3 (ver docs/TROUBLESHOOTING.md)
+batch_size = "auto"      # auto: el mayor de 4/2/1 que cabe en la VRAM libre (4 GB -> 2, 6 GB -> 4). O un número fijo.
 
 [device]
 device = "auto"          # auto | cuda | cpu
-compute_type_cuda = "int8"   # CTranslate2 no soporta float16 en Pascal (CC 6.1)
+compute_type_cuda = "auto"   # auto: int8_float16 si la GPU lo soporta (RTX), si no int8 (Pascal, CC 6.1)
 compute_type_cpu = "int8"
 
 [diarization]

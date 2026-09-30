@@ -90,6 +90,16 @@ def report_torch() -> None:
         print(f"Operación real en GPU: OK (checksum {y:.2f})")
     except Exception as exc:  # noqa: BLE001 - queremos reportar cualquier fallo
         print(f"Operación real en GPU: FALLÓ -> {exc}")
+        return
+    # Lo que usa batch_size = "auto" (transcriptor/runtime.py): large-v3 con batch 2 pide ~2,9 GB libres, con 4 ~3,6 GB.
+    print(f"VRAM libre para CUDA: {torch.cuda.mem_get_info()[0] // 2**20} MiB")
+    try:
+        import ctranslate2
+
+        types = sorted(ctranslate2.get_supported_compute_types("cuda"))
+        print(f"CTranslate2 en cuda: {' '.join(types)}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"CTranslate2 en cuda: FALLÓ -> {exc}")
 
 
 def main() -> None:

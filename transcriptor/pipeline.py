@@ -11,6 +11,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 
+from . import runtime
 from .config import Settings
 
 
@@ -73,16 +74,28 @@ def run(audio_path: str, s: Settings, device: str, reporter: Reporter) -> dict:
     duration = len(audio) / 16000
     print(f"      duración del audio: {fmt_duration(duration)}", file=sys.stderr)
 
-    with reporter.stage("asr", f"Transcribiendo ({s.model}, {device}, {compute_type}, batch {s.batch_size})"):
+    batch_size = s.batch_size
+    with reporter.stage("asr", f"Transcribiendo ({s.model}, {device}, {compute_type}, batch {batch_size})"):
         asr_options = {"initial_prompt": s.initial_prompt} if s.initial_prompt else None
-        model = whisperx.load_model(
-            s.model, device, compute_type=compute_type, language=s.language, asr_options=asr_options
-        )
-        result = model.transcribe(
-            audio, batch_size=s.batch_size, language=s.language, progress_callback=reporter.progress
-        )
-        del model
-        free_memory(device)
+        while True:
+            model = whisperx.load_model(
+                s.model, device, compute_type=compute_type, language=s.language, asr_options=asr_options
+            )
+            try:
+                result = model.transcribe(
+                    audio, batch_size=batch_size, language=s.language, progress_callback=reporter.progress
+                )
+                break
+            except RuntimeError as exc:
+                if device != "cuda" or batch_size == 1 or not runtime.is_out_of_memory(exc):
+                    raise
+                # Tras el OOM, CTranslate2 queda inservible (cudaErrorInvalidDevice): hay que recargar el modelo.
+                batch_size //= 2
+                print(f"\n      AVISO: sin memoria en la GPU; se reintenta con batch {batch_size}.",
+                      file=sys.stderr, flush=True)
+            finally:
+                del model
+                free_memory(device)
     language = result["language"]
 
     with reporter.stage("alineacion", f"Alineando palabras (idioma {language})"):
@@ -123,4 +136,5 @@ def run(audio_path: str, s: Settings, device: str, reporter: Reporter) -> dict:
     result["duration"] = duration
     result["device"] = device
     result["compute_type"] = compute_type
+    result["batch_size"] = batch_size
     return result
