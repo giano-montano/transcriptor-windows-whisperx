@@ -31,7 +31,7 @@ No hace falta instalar Python: uv descarga Python 3.11 si no lo encuentra.
 2. Descarga el proyecto e instala sus dependencias (descarga ~3 GB):
 
    ```powershell
-   git clone <url-del-repo>
+   git clone https://github.com/giano-montano/transcriptor-windows-whisperx.git
    cd transcriptor-windows-whisperx
    uv sync
    ```
@@ -217,3 +217,7 @@ Nadie lo probó todavía. La build cu128 descarga ~3,5 GB y necesita un driver r
 ## Problemas conocidos
 
 Ver [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+## Licencia
+
+[MIT](LICENSE).
