@@ -17,7 +17,9 @@ RENDER_FORMATS = ("txt", "srt")
 
 
 def find_json(target: Path) -> Path:
-    """Acepta el .json o la carpeta de la transcripción (outputs\\<nombre>)."""
+    """Acepta el .json, la carpeta de la transcripción (outputs\\<nombre>) o uno de sus .txt/.srt."""
+    if target.suffix.lower() in (".txt", ".srt") and target.with_suffix(".json").is_file():
+        return target.with_suffix(".json")
     if target.is_dir():
         candidate = target / f"{target.name}.json"
         if candidate.is_file():
@@ -39,7 +41,7 @@ def load_transcript(json_path: Path) -> dict:
 
 
 def add_output_args(p: argparse.ArgumentParser) -> None:
-    p.add_argument("target", type=Path, help="carpeta de la transcripción (outputs\\<nombre>) o su .json")
+    p.add_argument("target", type=Path, help="carpeta de la transcripción (outputs\\<nombre>), su .json o su .txt/.srt")
     p.add_argument("--config", type=Path, help="archivo de configuración alternativo (default: config.toml)")
     p.add_argument("--formats", help=f"lista separada por comas de: {','.join(RENDER_FORMATS)} (default: config.toml)")
     p.add_argument("--timestamps", action=argparse.BooleanOptionalAction, default=None,

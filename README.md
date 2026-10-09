@@ -92,7 +92,7 @@ uv run python -m transcriptor.render outputs\reunion --timestamps
 uv run python -m transcriptor.render outputs\reunion --formats txt,srt
 ```
 
-Acepta la carpeta o el `.json` y reemplaza los archivos que regenera.
+Acepta la carpeta, el `.json` o el `.txt`/`.srt` de la transcripción, y reemplaza los archivos que regenera.
 
 ### Poner nombres a los hablantes
 
